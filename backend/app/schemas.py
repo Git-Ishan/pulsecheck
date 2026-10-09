@@ -1,6 +1,16 @@
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, HttpUrl
+
+
+def ensure_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
+
+
+UtcDatetime = Annotated[datetime, AfterValidator(ensure_utc)]
 
 
 class MonitorCreate(BaseModel):
@@ -17,7 +27,7 @@ class MonitorRead(BaseModel):
     enabled: bool
     current_status: str
     consecutive_failures: int
-    last_checked_at: datetime | None
+    last_checked_at: UtcDatetime | None
     last_response_time_ms: int | None
     last_http_status: int | None
-    created_at: datetime
+    created_at: UtcDatetime
