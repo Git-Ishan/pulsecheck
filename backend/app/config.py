@@ -1,0 +1,3 @@
+import os
+
+CHECK_INTERVAL_SECONDS = int(os.getenv("CHECK_INTERVAL_SECONDS", "60"))
