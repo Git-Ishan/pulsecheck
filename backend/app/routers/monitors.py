@@ -1,10 +1,13 @@
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.checker import CHECK_TIMEOUT, check_url
 from app.database import get_db
-from app.models import Monitor
-from app.schemas import MonitorCreate, MonitorRead
+from app.models import Monitor, utcnow
+from app.monitoring import record_check
+from app.schemas import CheckResultRead, MonitorCreate, MonitorRead
 
 router = APIRouter(prefix="/monitors", tags=["monitors"])
 
@@ -40,3 +43,10 @@ def delete_monitor(monitor_id: int, db: Session = Depends(get_db)):
     monitor = get_monitor_or_404(monitor_id, db)
     db.delete(monitor)
     db.commit()
+@router.post("/{monitor_id}/check", response_model=CheckResultRead)
+async def run_manual_check(monitor_id: int, db: Session = Depends(get_db)):
+    monitor = get_monitor_or_404(monitor_id, db)
+    started_at = utcnow()
+    async with httpx.AsyncClient(timeout=CHECK_TIMEOUT, follow_redirects=False) as client:
+        outcome = await check_url(monitor.url, client)
+    return record_check(db, monitor, outcome, started_at)

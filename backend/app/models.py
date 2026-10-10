@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import DateTime, ForeignKey, Index, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
@@ -28,3 +28,22 @@ class Monitor(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, onupdate=utcnow
     )
+
+    checks: Mapped[list["CheckResult"]] = relationship(
+        back_populates="monitor", cascade="all, delete-orphan"
+    )
+
+
+class CheckResult(Base):
+    __tablename__ = "check_results"
+    __table_args__ = (Index("ix_check_monitor_time", "monitor_id", "checked_at"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    monitor_id: Mapped[int] = mapped_column(ForeignKey("monitors.id"))
+    checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    healthy: Mapped[bool]
+    http_status_code: Mapped[int | None]
+    response_time_ms: Mapped[int | None]
+    error_type: Mapped[str | None] = mapped_column(String(50))
+
+    monitor: Mapped["Monitor"] = relationship(back_populates="checks")

@@ -31,3 +31,15 @@ class MonitorRead(BaseModel):
     last_response_time_ms: int | None
     last_http_status: int | None
     created_at: UtcDatetime
+
+
+class CheckResultRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    monitor_id: int
+    checked_at: UtcDatetime
+    healthy: bool
+    http_status_code: int | None
+    response_time_ms: int | None
+    error_type: str | None
