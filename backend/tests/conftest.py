@@ -42,3 +42,13 @@ from app import urlsafety  # noqa: E402
 def fake_dns(monkeypatch):
     # No test should ever make a real DNS lookup.
     monkeypatch.setattr(urlsafety, "resolve_host", lambda host: ["93.184.216.34"])
+
+
+from app import heartbeat  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def reset_heartbeat():
+    heartbeat.reset()
+    yield
+    heartbeat.reset()

@@ -7,6 +7,7 @@ from sqlalchemy import select
 
 from app.checker import CHECK_TIMEOUT, check_url
 from app.config import CHECK_INTERVAL_SECONDS, MAX_CONCURRENT_CHECKS
+from app import heartbeat
 from app.database import SessionLocal
 from app.models import Monitor, utcnow
 from app.monitoring import record_check
@@ -55,10 +56,12 @@ async def run_cycle(client: httpx.AsyncClient) -> None:
 
 
 async def scheduler_loop() -> None:
+    heartbeat.mark_started(utcnow())
     async with httpx.AsyncClient(timeout=CHECK_TIMEOUT, follow_redirects=False) as client:
         while True:
             try:
                 await run_cycle(client)
+                heartbeat.mark_cycle_finished(utcnow())
             except Exception:
                 logger.exception("Monitoring cycle crashed")
             await asyncio.sleep(CHECK_INTERVAL_SECONDS)
