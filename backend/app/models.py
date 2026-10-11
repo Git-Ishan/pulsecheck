@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, ForeignKey, Index, String
+from sqlalchemy import DateTime, ForeignKey, Index, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -32,6 +32,9 @@ class Monitor(Base):
     checks: Mapped[list["CheckResult"]] = relationship(
         back_populates="monitor", cascade="all, delete-orphan"
     )
+    incidents: Mapped[list["Incident"]] = relationship(
+        cascade="all, delete-orphan"
+    )
 
 
 class CheckResult(Base):
@@ -47,3 +50,20 @@ class CheckResult(Base):
     error_type: Mapped[str | None] = mapped_column(String(50))
 
     monitor: Mapped["Monitor"] = relationship(back_populates="checks")
+
+
+class Incident(Base):
+    __tablename__ = "incidents"
+    __table_args__ = (
+        Index(
+            "uq_one_open_incident_per_monitor",
+            "monitor_id",
+            unique=True,
+            sqlite_where=text("resolved_at IS NULL"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    monitor_id: Mapped[int] = mapped_column(ForeignKey("monitors.id"))
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
