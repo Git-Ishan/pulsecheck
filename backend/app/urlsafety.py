@@ -6,7 +6,9 @@ from app import config
 
 
 class UnsafeURLError(Exception):
-    pass
+    def __init__(self, message: str, kind: str = "blocked_destination"):
+        super().__init__(message)
+        self.kind = kind
 
 
 def is_forbidden_ip(address: str) -> bool:
@@ -28,7 +30,7 @@ def check_url_allowed(url: str) -> None:
     try:
         addresses = resolve_host(host)
     except socket.gaierror:
-        raise UnsafeURLError("Host could not be resolved")
+        raise UnsafeURLError("Host could not be resolved", kind="dns_error")
     if config.ALLOW_PRIVATE_TARGETS:
         return
     for address in addresses:
