@@ -43,3 +43,12 @@ class CheckResultRead(BaseModel):
     http_status_code: int | None
     response_time_ms: int | None
     error_type: str | None
+
+
+class IncidentRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    monitor_id: int
+    started_at: UtcDatetime
+    resolved_at: UtcDatetime | None

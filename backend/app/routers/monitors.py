@@ -1,13 +1,13 @@
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.checker import CHECK_TIMEOUT, check_url
 from app.database import get_db
-from app.models import Monitor, utcnow
+from app.models import CheckResult, Incident, Monitor, utcnow
 from app.monitoring import record_check
-from app.schemas import CheckResultRead, MonitorCreate, MonitorRead
+from app.schemas import CheckResultRead, IncidentRead, MonitorCreate, MonitorRead
 
 router = APIRouter(prefix="/monitors", tags=["monitors"])
 
@@ -50,3 +50,38 @@ async def run_manual_check(monitor_id: int, db: Session = Depends(get_db)):
     async with httpx.AsyncClient(timeout=CHECK_TIMEOUT, follow_redirects=False) as client:
         outcome = await check_url(monitor.url, client)
     return record_check(db, monitor, outcome, started_at)
+
+@router.get("/{monitor_id}/checks", response_model=list[CheckResultRead])
+def list_checks(
+    monitor_id: int,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+):
+    get_monitor_or_404(monitor_id, db)
+    stmt = (
+        select(CheckResult)
+        .where(CheckResult.monitor_id == monitor_id)
+        .order_by(CheckResult.checked_at.desc(), CheckResult.id.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    return db.scalars(stmt).all()
+
+
+@router.get("/{monitor_id}/incidents", response_model=list[IncidentRead])
+def list_incidents(
+    monitor_id: int,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+):
+    get_monitor_or_404(monitor_id, db)
+    stmt = (
+        select(Incident)
+        .where(Incident.monitor_id == monitor_id)
+        .order_by(Incident.started_at.desc(), Incident.id.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    return db.scalars(stmt).all()
