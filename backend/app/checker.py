@@ -1,7 +1,10 @@
+import asyncio
 import time
 from dataclasses import dataclass
 
 import httpx
+
+from app.urlsafety import UnsafeURLError, check_url_allowed
 
 CHECK_TIMEOUT = httpx.Timeout(10.0, connect=5.0)
 
@@ -15,6 +18,12 @@ class CheckOutcome:
 
 
 async def check_url(url: str, client: httpx.AsyncClient) -> CheckOutcome:
+    # Re-validate on every check: DNS answers can change after creation.
+    try:
+        await asyncio.to_thread(check_url_allowed, url)
+    except UnsafeURLError as exc:
+        return CheckOutcome(False, None, None, exc.kind)
+
     start = time.perf_counter()
     try:
         response = await client.get(url)
