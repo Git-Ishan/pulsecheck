@@ -9,7 +9,7 @@ from app.database import Base, engine
 from app.routers import monitors
 from app.scheduler import scheduler_loop
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
 Base.metadata.create_all(bind=engine)
 
