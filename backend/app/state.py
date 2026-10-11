@@ -8,7 +8,12 @@ class Transition:
     event: str | None  # "went_down", "recovered", or None
 
 
-def next_state(status: str, failures: int, healthy: bool, threshold: int) -> Transition:
+def next_state(
+    status: str, failures: int, healthy: bool, threshold: int, stale: bool = False
+) -> Transition:
+    if stale:
+        failures = 0  # the old streak is too old to count as evidence
+
     if healthy:
         event = "recovered" if status == "DOWN" else None
         return Transition("UP", 0, event)

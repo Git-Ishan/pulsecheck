@@ -1,17 +1,30 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.checker import CheckOutcome
-from app.config import FAILURE_THRESHOLD
+from app.config import FAILURE_THRESHOLD, STALE_STREAK_SECONDS
 from app.models import CheckResult, Incident, Monitor
 from app.state import next_state
+
+
+def _as_utc(value: datetime | None) -> datetime | None:
+    # SQLite returns datetimes without a timezone; ours are always UTC.
+    if value is not None and value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
 
 
 def record_check(
     db: Session, monitor: Monitor, outcome: CheckOutcome, started_at: datetime
 ) -> CheckResult:
+    previous = _as_utc(monitor.last_checked_at)
+    stale = (
+        previous is not None
+        and (started_at - previous).total_seconds() > STALE_STREAK_SECONDS
+    )
+
     result = CheckResult(
         monitor_id=monitor.id,
         checked_at=started_at,
@@ -31,6 +44,7 @@ def record_check(
         monitor.consecutive_failures,
         outcome.healthy,
         FAILURE_THRESHOLD,
+        stale,
     )
     monitor.current_status = transition.status
     monitor.consecutive_failures = transition.consecutive_failures

@@ -74,3 +74,38 @@ def test_every_check_is_stored_in_history(db):
     monitor = make_monitor(db)
     feed(db, monitor, [OK, FAIL, FAIL, FAIL, OK])
     assert len(db.scalars(select(CheckResult)).all()) == 5
+
+
+def test_stale_streak_does_not_cause_false_down(db):
+    from datetime import timedelta
+
+    from app.config import STALE_STREAK_SECONDS
+
+    monitor = make_monitor(db)
+    t0 = utcnow()
+    record_check(db, monitor, OK, t0)
+    record_check(db, monitor, FAIL, t0 + timedelta(seconds=1))
+    record_check(db, monitor, FAIL, t0 + timedelta(seconds=2))
+    # server was off for hours, then the third failure arrives
+    later = t0 + timedelta(seconds=STALE_STREAK_SECONDS + 3600)
+    record_check(db, monitor, FAIL, later)
+    assert monitor.current_status == "UP"
+    assert monitor.consecutive_failures == 1
+    assert incidents(db) == []
+
+
+def test_gap_during_outage_does_not_duplicate_incident(db):
+    from datetime import timedelta
+
+    from app.config import STALE_STREAK_SECONDS
+
+    monitor = make_monitor(db)
+    t0 = utcnow()
+    for i in range(4):
+        record_check(db, monitor, FAIL, t0 + timedelta(seconds=i))
+    assert monitor.current_status == "DOWN"
+    later = t0 + timedelta(seconds=STALE_STREAK_SECONDS + 3600)
+    for i in range(4):
+        record_check(db, monitor, FAIL, later + timedelta(seconds=i))
+    assert monitor.current_status == "DOWN"
+    assert len(incidents(db)) == 1

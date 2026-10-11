@@ -53,3 +53,16 @@ def test_first_success_from_unknown_is_up_without_event():
     status, failures, events = run("UNKNOWN", [True])
     assert status == "UP"
     assert events == [None]
+
+
+def test_stale_streak_is_discarded():
+    t = next_state("UP", 2, False, 3, stale=True)
+    assert t.status == "UP"
+    assert t.consecutive_failures == 1
+    assert t.event is None
+
+
+def test_stale_does_not_clear_an_existing_outage():
+    t = next_state("DOWN", 5, False, 3, stale=True)
+    assert t.status == "DOWN"
+    assert t.event is None
