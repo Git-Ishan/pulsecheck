@@ -17,3 +17,19 @@ def db():
     Base.metadata.create_all(engine)
     with sessionmaker(bind=engine)() as session:
         yield session
+
+
+from fastapi.testclient import TestClient  # noqa: E402
+
+from app.database import get_db  # noqa: E402
+from app.main import app  # noqa: E402
+
+
+@pytest.fixture
+def client(db):
+    def override_get_db():
+        yield db
+
+    app.dependency_overrides[get_db] = override_get_db
+    yield TestClient(app)
+    app.dependency_overrides.clear()
