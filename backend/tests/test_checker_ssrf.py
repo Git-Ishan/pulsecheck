@@ -64,3 +64,49 @@ def test_private_target_is_checked_when_dev_flag_is_on(monkeypatch):
     monkeypatch.setattr(config, "ALLOW_PRIVATE_TARGETS", True)
     result = run(lambda request: httpx.Response(200))
     assert result.healthy is True
+
+
+def test_redirect_to_private_address_is_blocked(monkeypatch):
+    monkeypatch.setattr(
+        urlsafety,
+        "resolve_host",
+        lambda host: ["127.0.0.1"] if host == "internal.test" else ["93.184.216.34"],
+    )
+    hosts_called = []
+
+    def handler(request):
+        hosts_called.append(request.url.host)
+        return httpx.Response(302, headers={"location": "http://internal.test/admin"})
+
+    result = run(handler, "http://start.test/")
+    assert result.healthy is False
+    assert result.error_type == "blocked_destination"
+    assert hosts_called == ["start.test"]  # the internal host was never contacted
+
+
+def test_redirect_loop_gives_up():
+    def handler(request):
+        return httpx.Response(302, headers={"location": "/again"})
+
+    result = run(handler)
+    assert result.healthy is False
+    assert result.error_type == "too_many_redirects"
+
+
+def test_redirect_to_non_http_scheme_is_blocked():
+    def handler(request):
+        return httpx.Response(302, headers={"location": "ftp://files.test/secret"})
+
+    result = run(handler)
+    assert result.error_type == "blocked_destination"
+
+
+class ExplodingBody(httpx.AsyncByteStream):
+    async def __aiter__(self):
+        raise AssertionError("the response body must not be downloaded")
+        yield b""
+
+
+def test_response_body_is_never_downloaded():
+    result = run(lambda request: httpx.Response(200, stream=ExplodingBody()))
+    assert result.healthy is True

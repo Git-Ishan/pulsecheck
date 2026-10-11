@@ -24,7 +24,10 @@ def resolve_host(host: str) -> list[str]:
 
 
 def check_url_allowed(url: str) -> None:
-    host = urlsplit(url).hostname
+    parts = urlsplit(url)
+    if parts.scheme not in ("http", "https"):
+        raise UnsafeURLError("Only http and https are allowed")
+    host = parts.hostname
     if not host:
         raise UnsafeURLError("URL has no host")
     try:

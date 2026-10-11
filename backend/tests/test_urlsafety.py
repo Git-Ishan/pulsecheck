@@ -85,3 +85,8 @@ def test_api_rejects_localhost(client, monkeypatch):
 def test_api_accepts_public_url(client):
     response = client.post("/monitors", json={"url": "https://example.com"})
     assert response.status_code == 201
+
+
+def test_non_http_scheme_is_rejected():
+    with pytest.raises(UnsafeURLError):
+        check_url_allowed("ftp://example.com/file")

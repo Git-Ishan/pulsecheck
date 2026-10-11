@@ -22,12 +22,27 @@ def test_success_200():
     assert result.response_time_ms is not None
 
 
-def test_redirect_is_healthy_and_not_followed():
-    result = run_check(
-        lambda request: httpx.Response(301, headers={"location": "http://other.local"})
-    )
+def test_redirect_is_followed_to_the_final_response():
+    def handler(request):
+        if request.url.path == "/new":
+            return httpx.Response(200)
+        return httpx.Response(301, headers={"location": "/new"})
+
+    result = run_check(handler)
     assert result.healthy is True
-    assert result.http_status_code == 301
+    assert result.http_status_code == 200
+
+
+def test_redirect_to_failing_page_is_unhealthy():
+    def handler(request):
+        if request.url.path == "/new":
+            return httpx.Response(500)
+        return httpx.Response(301, headers={"location": "/new"})
+
+    result = run_check(handler)
+    assert result.healthy is False
+    assert result.http_status_code == 500
+    assert result.error_type == "http_error"
 
 
 def test_http_500_is_unhealthy():
