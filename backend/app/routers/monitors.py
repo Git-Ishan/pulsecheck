@@ -8,6 +8,7 @@ from app.database import get_db
 from app.models import CheckResult, Incident, Monitor, utcnow
 from app.monitoring import record_check
 from app.schemas import CheckResultRead, IncidentRead, MonitorCreate, MonitorRead
+from app.urlsafety import UnsafeURLError, check_url_allowed
 
 router = APIRouter(prefix="/monitors", tags=["monitors"])
 
@@ -21,6 +22,10 @@ def get_monitor_or_404(monitor_id: int, db: Session) -> Monitor:
 
 @router.post("", response_model=MonitorRead, status_code=201)
 def create_monitor(payload: MonitorCreate, db: Session = Depends(get_db)):
+    try:
+        check_url_allowed(str(payload.url))
+    except UnsafeURLError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
     monitor = Monitor(name=payload.name, url=str(payload.url))
     db.add(monitor)
     db.commit()

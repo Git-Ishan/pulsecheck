@@ -33,3 +33,12 @@ def client(db):
     app.dependency_overrides[get_db] = override_get_db
     yield TestClient(app)
     app.dependency_overrides.clear()
+
+
+from app import urlsafety  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def fake_dns(monkeypatch):
+    # No test should ever make a real DNS lookup.
+    monkeypatch.setattr(urlsafety, "resolve_host", lambda host: ["93.184.216.34"])
