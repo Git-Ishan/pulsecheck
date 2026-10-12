@@ -9,3 +9,8 @@ SCHEDULER_STALE_SECONDS = int(os.getenv("SCHEDULER_STALE_SECONDS", str(3 * CHECK
 API_KEY = os.getenv("API_KEY", "")
 MAX_MONITORS = int(os.getenv("MAX_MONITORS", "25"))
 MANUAL_CHECK_LIMIT_PER_MINUTE = int(os.getenv("MANUAL_CHECK_LIMIT_PER_MINUTE", "10"))
+CORS_ORIGINS = [
+    o.strip()
+    for o in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
+    if o.strip()
+]

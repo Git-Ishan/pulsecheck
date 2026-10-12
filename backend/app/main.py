@@ -3,13 +3,14 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app import heartbeat
 from app import models  # noqa: F401  (registers the tables)
-from app.config import SCHEDULER_STALE_SECONDS
+from app.config import CORS_ORIGINS, SCHEDULER_STALE_SECONDS
 from app.database import Base, engine, get_db
 from app.models import utcnow
 from app.routers import monitors, stats
@@ -33,6 +34,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="PulseCheck", lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["Content-Type", "X-API-Key"],
+)
 app.include_router(monitors.router)
 app.include_router(stats.router)
 
