@@ -52,3 +52,20 @@ class IncidentRead(BaseModel):
     monitor_id: int
     started_at: UtcDatetime
     resolved_at: UtcDatetime | None
+
+
+class StatsRead(BaseModel):
+    total: int
+    up: int
+    down: int
+    unknown: int
+
+
+class UptimeRead(BaseModel):
+    monitor_id: int
+    window_hours: int
+    sample_size: int
+    successful_checks: int
+    failed_checks: int
+    uptime_percent: float | None
+    average_response_time_ms: int | None

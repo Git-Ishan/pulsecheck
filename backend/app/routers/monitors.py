@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
@@ -9,8 +11,9 @@ from app.database import get_db
 from app.models import CheckResult, Incident, Monitor, utcnow
 from app.monitoring import record_check
 from app.ratelimit import enforce_manual_check_limit
-from app.schemas import CheckResultRead, IncidentRead, MonitorCreate, MonitorRead
+from app.schemas import CheckResultRead, IncidentRead, MonitorCreate, MonitorRead, UptimeRead
 from app.security import require_api_key
+from app.uptime import compute_uptime
 from app.urlsafety import UnsafeURLError, check_url_allowed
 
 router = APIRouter(prefix="/monitors", tags=["monitors"])
@@ -97,3 +100,15 @@ def list_incidents(
         .offset(offset)
     )
     return db.scalars(stmt).all()
+
+
+@router.get("/{monitor_id}/uptime", response_model=UptimeRead)
+def get_uptime(
+    monitor_id: int,
+    hours: int = Query(24, ge=1, le=720),
+    db: Session = Depends(get_db),
+):
+    get_monitor_or_404(monitor_id, db)
+    since = utcnow() - timedelta(hours=hours)
+    result = compute_uptime(db, monitor_id, since)
+    return UptimeRead(monitor_id=monitor_id, window_hours=hours, **result)

@@ -12,7 +12,7 @@ from app import models  # noqa: F401  (registers the tables)
 from app.config import SCHEDULER_STALE_SECONDS
 from app.database import Base, engine, get_db
 from app.models import utcnow
-from app.routers import monitors
+from app.routers import monitors, stats
 from app.scheduler import scheduler_loop
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
@@ -34,6 +34,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="PulseCheck", lifespan=lifespan)
 app.include_router(monitors.router)
+app.include_router(stats.router)
 
 
 @app.get("/health")
