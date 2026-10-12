@@ -103,7 +103,10 @@ def test_loop_survives_a_crashing_cycle(monkeypatch):
 
     async def go():
         task = asyncio.create_task(scheduler.scheduler_loop())
-        await asyncio.sleep(0.2)
+        for _ in range(500):  # wait up to ~5 s for a second cycle
+            if calls["n"] >= 2:
+                break
+            await asyncio.sleep(0.01)
         task.cancel()
         try:
             await task
