@@ -34,3 +34,42 @@ main {
 .error {
   color: #dc2626;
 }
+
+table {
+  width: 100%;
+  margin-top: 1.5rem;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.6rem 0.5rem;
+  border-bottom: 1px solid #8883;
+}
+
+.muted {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.badge.up {
+  background: #16a34a;
+}
+
+.badge.down {
+  background: #dc2626;
+}
+
+.badge.unknown {
+  background: #6b7280;
+}
