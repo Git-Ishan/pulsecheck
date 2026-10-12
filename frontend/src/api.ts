@@ -30,3 +30,33 @@ async function getJson<T>(path: string): Promise<T> {
 
 export const fetchStats = () => getJson<Stats>('/stats')
 export const fetchMonitors = () => getJson<Monitor[]>('/monitors')
+
+function describeError(status: number, detail: unknown): string {
+  if (status === 401) return 'The API key is wrong or missing.'
+  if (status === 503) return 'The server has no API key configured, so changes are disabled.'
+  if (status === 409) return 'The monitor limit has been reached.'
+  if (status === 429) return 'Too many requests. Wait a minute and try again.'
+  if (status === 422) {
+    if (typeof detail === 'string') return detail
+    return 'That does not look like a valid http(s) URL.'
+  }
+  return `Request failed with status ${status}.`
+}
+
+export async function createMonitor(apiKey: string, name: string, url: string): Promise<Monitor> {
+  let response: Response
+  try {
+    response = await fetch(`${API_URL}/monitors`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+      body: JSON.stringify({ name: name.trim() || null, url: url.trim() }),
+    })
+  } catch {
+    throw new Error('Could not reach the API.')
+  }
+  if (!response.ok) {
+    const body = await response.json().catch(() => null)
+    throw new Error(describeError(response.status, body?.detail))
+  }
+  return response.json()
+}

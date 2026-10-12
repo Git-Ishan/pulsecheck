@@ -73,3 +73,42 @@ td {
 .badge.unknown {
   background: #6b7280;
 }
+
+.add-form {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+}
+
+.add-form h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.add-form input {
+  padding: 0.5rem;
+  border: 1px solid #8886;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.add-form button {
+  padding: 0.5rem;
+  border: 0;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.add-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ok {
+  color: #16a34a;
+}

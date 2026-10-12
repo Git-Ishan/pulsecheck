@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { fetchMonitors, fetchStats } from './api'
+import type { FormEvent } from 'react'
+import { createMonitor, fetchMonitors, fetchStats } from './api'
 import type { Monitor, Stats } from './api'
 import './App.css'
 
@@ -39,10 +40,74 @@ function MonitorRow({ monitor }: { monitor: Monitor }) {
   )
 }
 
+function AddMonitorForm({
+  apiKey,
+  onApiKeyChange,
+  onCreated,
+}: {
+  apiKey: string
+  onApiKeyChange: (value: string) => void
+  onCreated: () => void
+}) {
+  const [name, setName] = useState('')
+  const [url, setUrl] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null)
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setMessage(null)
+    try {
+      const created = await createMonitor(apiKey, name, url)
+      setName('')
+      setUrl('')
+      setMessage({ kind: 'ok', text: `Added ${created.name ?? created.url}.` })
+      onCreated()
+    } catch (err) {
+      setMessage({ kind: 'error', text: (err as Error).message })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form className="add-form" onSubmit={handleSubmit}>
+      <h2>Add a monitor</h2>
+      <input
+        type="password"
+        placeholder="API key (kept in memory only)"
+        value={apiKey}
+        onChange={(e) => onApiKeyChange(e.target.value)}
+        autoComplete="off"
+      />
+      <input
+        type="text"
+        placeholder="Name (optional)"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        maxLength={100}
+      />
+      <input
+        type="text"
+        placeholder="https://example.com"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+      />
+      <button type="submit" disabled={busy || !apiKey || !url.trim()}>
+        {busy ? 'Adding...' : 'Add monitor'}
+      </button>
+      {message && <p className={message.kind === 'ok' ? 'ok' : 'error'}>{message.text}</p>}
+    </form>
+  )
+}
+
 function App() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [monitors, setMonitors] = useState<Monitor[] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [apiKey, setApiKey] = useState('')
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -66,7 +131,7 @@ function App() {
       cancelled = true
       clearInterval(timer)
     }
-  }, [])
+  }, [refreshKey])
 
   return (
     <main>
@@ -81,6 +146,11 @@ function App() {
           <StatCard label="Unknown" value={stats.unknown} kind="unknown" />
         </section>
       )}
+      <AddMonitorForm
+        apiKey={apiKey}
+        onApiKeyChange={setApiKey}
+        onCreated={() => setRefreshKey((k) => k + 1)}
+      />
       {monitors && monitors.length === 0 && <p className="muted">No monitors yet.</p>}
       {monitors && monitors.length > 0 && (
         <table>
