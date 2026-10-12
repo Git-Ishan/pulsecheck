@@ -31,7 +31,7 @@ def client(db):
         yield db
 
     app.dependency_overrides[get_db] = override_get_db
-    yield TestClient(app)
+    yield TestClient(app, headers={"X-API-Key": "test-key"})
     app.dependency_overrides.clear()
 
 
@@ -52,3 +52,24 @@ def reset_heartbeat():
     heartbeat.reset()
     yield
     heartbeat.reset()
+
+
+from app import config, ratelimit  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def api_key_and_limiter(monkeypatch):
+    monkeypatch.setattr(config, "API_KEY", "test-key")
+    ratelimit.manual_check_limiter.reset()
+    yield
+    ratelimit.manual_check_limiter.reset()
+
+
+@pytest.fixture
+def anon_client(db):
+    def override_get_db():
+        yield db
+
+    app.dependency_overrides[get_db] = override_get_db
+    yield TestClient(app)  # no API key header
+    app.dependency_overrides.clear()
