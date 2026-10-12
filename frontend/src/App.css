@@ -1,0 +1,36 @@
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.card {
+  border: 1px solid #8884;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.card .number {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.card.up .number {
+  color: #16a34a;
+}
+
+.card.down .number {
+  color: #dc2626;
+}
+
+.error {
+  color: #dc2626;
+}
