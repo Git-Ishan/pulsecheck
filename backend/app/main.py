@@ -10,8 +10,9 @@ from sqlalchemy.orm import Session
 
 from app import heartbeat
 from app import models  # noqa: F401  (registers the tables)
-from app.config import CORS_ORIGINS, SCHEDULER_STALE_SECONDS
+from app.config import CORS_ORIGINS, SCHEDULER_STALE_SECONDS, STATIC_DIR
 from app.database import Base, engine, get_db
+from app.frontend import mount_frontend
 from app.models import utcnow
 from app.routers import monitors, stats
 from app.scheduler import scheduler_loop
@@ -77,3 +78,8 @@ def scheduler_health(request: Request):
     }
     code = 200 if status in heartbeat.HEALTHY else 503
     return JSONResponse(body, status_code=code)
+
+
+# Must stay last: API routes are matched first, the frontend catches the rest.
+if STATIC_DIR:
+    mount_frontend(app, STATIC_DIR)

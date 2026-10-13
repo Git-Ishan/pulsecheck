@@ -14,3 +14,4 @@ CORS_ORIGINS = [
     for o in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
     if o.strip()
 ]
+STATIC_DIR = os.getenv("STATIC_DIR", "")
