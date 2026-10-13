@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { createMonitor, fetchMonitors, fetchStats } from './api'
 import type { Monitor, Stats } from './api'
+import MonitorDetail from './MonitorDetail'
 import './App.css'
 
 const REFRESH_MS = 10_000
@@ -23,9 +24,17 @@ function formatTime(iso: string | null): string {
   return iso ? new Date(iso).toLocaleString() : 'never'
 }
 
-function MonitorRow({ monitor }: { monitor: Monitor }) {
+function MonitorRow({
+  monitor,
+  selected,
+  onSelect,
+}: {
+  monitor: Monitor
+  selected: boolean
+  onSelect: () => void
+}) {
   return (
-    <tr>
+    <tr className={selected ? 'selected' : ''} onClick={onSelect}>
       <td>
         <strong>{monitor.name ?? monitor.url}</strong>
         {monitor.name && <div className="muted">{monitor.url}</div>}
@@ -108,6 +117,7 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [apiKey, setApiKey] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
+  const [selectedId, setSelectedId] = useState<number | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -132,6 +142,8 @@ function App() {
       clearInterval(timer)
     }
   }, [refreshKey])
+
+  const selected = monitors?.find((m) => m.id === selectedId) ?? null
 
   return (
     <main>
@@ -165,10 +177,26 @@ function App() {
           </thead>
           <tbody>
             {monitors.map((m) => (
-              <MonitorRow key={m.id} monitor={m} />
+              <MonitorRow
+                key={m.id}
+                monitor={m}
+                selected={m.id === selectedId}
+                onSelect={() => setSelectedId(m.id)}
+              />
             ))}
           </tbody>
         </table>
+      )}
+      {selected && (
+        <MonitorDetail
+          key={selected.id}
+          monitor={selected}
+          apiKey={apiKey}
+          onDeleted={() => {
+            setSelectedId(null)
+            setRefreshKey((k) => k + 1)
+          }}
+        />
       )}
       <p className="muted">Refreshes every {REFRESH_MS / 1000} seconds.</p>
     </main>

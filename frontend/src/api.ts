@@ -60,3 +60,53 @@ export async function createMonitor(apiKey: string, name: string, url: string): 
   }
   return response.json()
 }
+
+export type CheckResult = {
+  id: number
+  monitor_id: number
+  checked_at: string
+  healthy: boolean
+  http_status_code: number | null
+  response_time_ms: number | null
+  error_type: string | null
+}
+
+export type Incident = {
+  id: number
+  monitor_id: number
+  started_at: string
+  resolved_at: string | null
+}
+
+export type Uptime = {
+  monitor_id: number
+  window_hours: number
+  sample_size: number
+  successful_checks: number
+  failed_checks: number
+  uptime_percent: number | null
+  average_response_time_ms: number | null
+}
+
+export const fetchChecks = (id: number, limit = 50) =>
+  getJson<CheckResult[]>(`/monitors/${id}/checks?limit=${limit}`)
+export const fetchIncidents = (id: number) =>
+  getJson<Incident[]>(`/monitors/${id}/incidents?limit=10`)
+export const fetchUptime = (id: number, hours = 24) =>
+  getJson<Uptime>(`/monitors/${id}/uptime?hours=${hours}`)
+
+export async function deleteMonitor(apiKey: string, id: number): Promise<void> {
+  let response: Response
+  try {
+    response = await fetch(`${API_URL}/monitors/${id}`, {
+      method: 'DELETE',
+      headers: { 'X-API-Key': apiKey },
+    })
+  } catch {
+    throw new Error('Could not reach the API.')
+  }
+  if (!response.ok) {
+    const body = await response.json().catch(() => null)
+    throw new Error(describeError(response.status, body?.detail))
+  }
+}
