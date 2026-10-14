@@ -1,0 +1,30 @@
+services:
+  app:
+    image: ghcr.io/git-ishan/pulsecheck:latest
+    restart: unless-stopped
+    environment:
+      API_KEY: ${API_KEY}
+      CHECK_INTERVAL_SECONDS: "60"
+      ALLOW_PRIVATE_TARGETS: "false"
+    volumes:
+      - pulsecheck-data:/data
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+
+volumes:
+  pulsecheck-data:
+  caddy-data:
+  caddy-config:
