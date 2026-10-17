@@ -11,6 +11,9 @@ CHECK_TIMEOUT = httpx.Timeout(10.0, connect=5.0)
 MAX_REDIRECTS = 5
 REDIRECT_CODES = {301, 302, 303, 307, 308}
 
+CHECK_USER_AGENT = "PulseCheck/1.0 (+https://github.com/Git-Ishan/pulsecheck)"
+CHECK_HEADERS = {"User-Agent": CHECK_USER_AGENT}
+
 
 @dataclass
 class CheckOutcome:
@@ -34,7 +37,7 @@ async def check_url(url: str, client: httpx.AsyncClient) -> CheckOutcome:
         start = time.perf_counter()
         try:
             # stream() reads only the headers; the body is never downloaded.
-            async with client.stream("GET", current) as response:
+            async with client.stream("GET", current, headers=CHECK_HEADERS) as response:
                 code = response.status_code
                 location = response.headers.get("location")
         except httpx.TimeoutException:
