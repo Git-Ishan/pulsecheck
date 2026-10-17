@@ -62,7 +62,7 @@ python -m pytest
 
 GitHub Actions runs backend tests, frontend lint and build, and a Docker build, then publishes the image to GHCR. On the server, `deploy/docker-compose.yml` and `deploy/Caddyfile` run the app behind Caddy. Deploying is manual: `docker compose pull && docker compose up -d`.
 
-Configuration is through environment variables: `API_KEY`, `CHECK_INTERVAL_SECONDS`, `ALLOW_PRIVATE_TARGETS` (local development only), and `DOMAIN` for Caddy. See `deploy/.env.example`.
+The server needs a `.env` file with `DOMAIN` and `API_KEY` (see `deploy/.env.example`). `CHECK_INTERVAL_SECONDS` and `ALLOW_PRIVATE_TARGETS` are set in `deploy/docker-compose.yml`; `ALLOW_PRIVATE_TARGETS` must stay `false` outside local development.
 
 ## API
 
@@ -74,7 +74,9 @@ Configuration is through environment variables: `API_KEY`, `CHECK_INTERVAL_SECON
 | GET | `/monitors/{id}/checks`, `/incidents`, `/uptime` |
 | GET | `/stats`, `/health`, `/ready`, `/health/scheduler` |
 
-Interactive docs are served at `/docs`.
+Interactive API docs are served at `/docs`.
+
+Interactive API docs are served at `/docs`.
 
 ## Limitations
 
